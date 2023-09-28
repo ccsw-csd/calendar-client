@@ -1,0 +1,26 @@
+
+<div style="width: 382px; display:flex; flex-direction: column; border: 1px solid #e5e5e5; border-radius: 4px; padding: 15px 8px; background: #ffffff;">
+
+    <div style="padding: 1rem">
+        <span class="title">{{MONTH_NAMES[month]}} 2023</span>
+    </div>
+    <div style="width: 364px; display: flex; flex-direction: row; justify-content: space-evenly;">
+        <div class="week-title"><span>Lu</span></div>
+        <div class="week-title"><span>Ma</span></div>
+        <div class="week-title"><span>Mi</span></div>
+        <div class="week-title"><span>Ju</span></div>
+        <div class="week-title"><span>Vi</span></div>
+        <div class="week-title"><span>Sá</span></div>
+        <div class="week-title"><span>Do</span></div>
+    </div>
+    <div *ngFor="let week of data" style="width: 364px; display: flex; flex-direction: row; justify-content: space-evenly;">
+        <div *ngFor="let day of week" syle="padding: 8px;">
+            <div [ngClass]="{'day' : day.actualMonth, 'disable-day' : day.actualMonth == false}" (click)="clickDate(day)" [ngStyle]="{'background-color': day.metadata?.type?.color}">
+                <span>{{day.day}}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+

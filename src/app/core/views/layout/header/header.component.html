@@ -1,0 +1,23 @@
+<div class="toolbar-header">
+    <p-toolbar>
+      <div class="header-button p-toolbar-group-left">
+        <button pButton pRipple type="button" icon="pi pi-bars" (click)="toggleSideNav()" class="p-button-rounded"></button>
+        <div class="flex align-items-center justify-content-start p-fluid pl-4">
+          <div class="image aboslute left-0" routerLink="/welcome">
+            <img src="assets/images/logo.png" height="40px" alt=""/>
+          </div>
+        </div>
+      </div>
+      <div class="header-button p-toolbar-group-right">
+        <a pButton pRipple type="button" style="text-decoration: none" class="p-button-rounded" pTooltip="Send feedback" tooltipPosition="bottom" [href]="getEmailRef()">
+          <span class="material-icons">feedback</span>
+        </a>
+        <p-menu class="logout-menu" #menu [popup]="true" [model]="items"></p-menu>
+        <div class="p-buttonset" style="display:flex; align-items: center; color:white; cursor: pointer;" (click)="menu.toggle($event)">
+          <span class="material-icons">account_circle</span>
+          <span>&nbsp;&nbsp;{{getName()}}&nbsp;&nbsp;</span>
+          <span class="material-icons">arrow_drop_down</span>
+        </div>
+      </div>
+    </p-toolbar>
+</div>

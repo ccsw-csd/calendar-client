@@ -1,0 +1,16 @@
+<div class="card flex flex-column justify-content-center">
+    <div class="gap-2">
+        <p-pickList appendTo="body" [stripedRows]="true" [source]="columns" [target]="selectedColumns" 
+        [showSourceControls]="false" [showTargetControls]="false"  
+        sourceHeader="Columnas Disponibles" targetHeader="Columnas Seleccionadas" [responsive]="true" 
+         [sourceStyle]="{ height: '30rem' }" [targetStyle]="{ height: '30rem' }">
+            <ng-template let-column pTemplate="item"  >
+                <span class="font-bold">{{ column.header }}</span>
+            </ng-template>
+        </p-pickList>
+    </div>
+    <div class="flex flex-row mt-5 gap-4 justify-content-end gap-2">
+        <button pButton pRipple styleClass="" label="Cancelar" icon="pi pi-times" class="p-button p-button-secondary" (click)="closeWindow()"></button>
+        <button pButton pRipple p-button-label="10px" label="Guardar" icon="pi pi-check" (click)="save()"></button>
+    </div>
+</div>
