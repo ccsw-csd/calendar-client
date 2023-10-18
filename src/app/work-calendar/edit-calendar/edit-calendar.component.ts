@@ -20,31 +20,25 @@ import html2canvas from 'html2canvas';
 })
 export class EditCalendarComponent {
   @ViewChild('calendarsDiv') calendarsDiv: ElementRef;
-  @ViewChild('dataDiv') dataDiv: ElementRef;
 
   isLoading: boolean = true;
   horasLaborales: number = 0;
   diasFestivos: number = 0;
-
   scheduleTypes: ScheduleType[];
   selectedType: ScheduleType;
   selectedYear: DropdownEntry;
   selectedYearAux: DropdownEntry;
   selectedCalendar: Map<String, MetadataDay>;
-
-  modifiedDays: SaveDay[] = [];
-
+  selectedCenter: DropdownEntry;
+  selectedCollective: DropdownEntry;
   centers: DropdownEntry[];
   collectives: DropdownEntry[];
   years: DropdownEntry[] = [];
-
-  existingCalendars: Calendar[] = [];
-
-  selectedCenter: DropdownEntry;
-  selectedCollective: DropdownEntry;
-
   calendars: Map<String, Map<String, MetadataDay>>;
   collectiveData: Collective;
+
+  private modifiedDays: SaveDay[] = [];
+  private existingCalendars: Calendar[] = [];
 
   constructor(
     private collectiveService: CollectiveService,
@@ -96,7 +90,217 @@ export class EditCalendarComponent {
     this.getCalendars();
   }
 
-  getCalendars() {
+  changeCenter(): void {
+    this.collectives = this.existingCalendars
+      .filter((r) => r.centerId.toString() === this.selectedCenter.code)
+      .map((rs) => ({ code: rs.groupId.toString(), name: rs.groupName }));
+    if (this.collectives.find((c) => c.code === this.selectedCollective.code)) {
+      this.getDaysData();
+    } else {
+      this.selectedCollective = this.collectives[0];
+      this.changeCollective();
+    }
+  }
+
+  changeCollective(): void {
+    const calendarId = this.existingCalendars.filter(
+      (eC) =>
+        eC.centerId.toString() === this.selectedCenter.code &&
+        eC.groupId.toString() === this.selectedCollective.code
+    )[0];
+    const sources = [
+      this.collectiveService.getCollective(
+        parseInt(this.selectedCollective.code)
+      ),
+      this.workCalendarService.getDays(
+        parseInt(this.selectedYear.code),
+        calendarId.id
+      ),
+    ];
+
+    forkJoin(sources).subscribe({
+      next: (res: any[]) => {
+        this.collectiveData = res[0];
+        const hours = Math.trunc(this.collectiveData.hoursWeek);
+        const minutes =
+          (this.collectiveData.hoursWeek -
+            Math.trunc(this.collectiveData.hoursWeek)) *
+          60;
+        const hoursIntensive = Math.trunc(this.collectiveData.hoursIntensive);
+        const minutesIntensive =
+          (this.collectiveData.hoursIntensive -
+            Math.trunc(this.collectiveData.hoursIntensive)) *
+          60;
+        const minutesIText =
+          minutesIntensive === 0 ? '' : ` ${minutesIntensive.toString()}m`;
+        const minutesText = minutes === 0 ? '' : ` ${minutes.toString()}m`;
+        this.scheduleTypes[1].name = `Jornada normal (${hours}h${minutesText})`;
+        this.scheduleTypes[1].hours = hours;
+        this.scheduleTypes[1].minutes = minutes;
+        this.scheduleTypes[2].name = `Jornada intensiva (${hoursIntensive}h${minutesIText})`;
+        this.scheduleTypes[2].hours = hoursIntensive;
+        this.scheduleTypes[2].minutes = minutesIntensive;
+        this.generateCurrentCalendar(res[1]);
+      },
+    });
+  }
+
+  changeYear(): void {
+    this.confirmationService.confirm({
+      message: 'Si cambia el año se perderan todos los cambios ¿Continuar?.',
+      rejectButtonStyleClass: 'p-button p-button-secondary p-button-outlined',
+      accept: () => {
+        this.selectedYearAux = this.selectedYear;
+        this.confirmationService.close();
+        this.resetCalendar();
+        this.changeCollective();
+      },
+      reject: () => {
+        this.selectedYear = this.selectedYearAux;
+        this.confirmationService.close();
+      },
+    });
+  }
+
+  selectType(type: ScheduleType): void {
+    this.selectedType = type;
+  }
+
+  selectDate(date: any): void {
+    if (date.type == this.selectedType) date.type = date.originalType;
+    else date.type = this.selectedType;
+
+    this.changeDateInCalendarChild(date);
+    this.calculateTotals();
+  }
+
+  saveDays(): void {
+    this.isLoading = true;
+
+    for (const [key, value] of this.calendars.entries()) {
+      for (const [key_day, metaDay] of value.entries()) {
+        if (metaDay.originalType.id !== metaDay.type.id) {
+          const center = key.split('_')[0];
+          const group = key.split('_')[1];
+
+          this.modifiedDays.push({
+            date: `${metaDay.year}-${metaDay.month + 1}-${metaDay.day}`,
+            categoryId: metaDay.type.id,
+            calendarId: this.existingCalendars.find(
+              (cc) =>
+                cc.centerId === parseInt(center) &&
+                cc.groupId === parseInt(group)
+            ).id,
+          });
+          const calendar = this.getSelectedCalendar();
+          calendar.get(key_day).originalType = calendar.get(key_day).type;
+        }
+      }
+    }
+
+    this.workCalendarService.saveDays(this.modifiedDays).subscribe({
+      next: () => {
+        this.snackbarService.showMessage(
+          'El calendario se ha guardado correctamente'
+        );
+        this.modifiedDays = [];
+        this.ref.close(true);
+      },
+      error: (errorResponse) => {
+        this.isLoading = false;
+        this.snackbarService.error(errorResponse['message']);
+      },
+      complete: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  openPDF(): void {
+    this.isLoading = true;
+    html2canvas(this.calendarsDiv.nativeElement, {
+      scrollX: 0,
+      scrollY: -window.scrollY,
+    }).then((canvas) => {
+      const fileWidth = 200;
+      let fileHeight = (canvas.height * fileWidth) / canvas.width;
+
+      let fontHeader = 20;
+      let fontbody = 10;
+      let fontsmall = 7;
+      let spacing = 1;
+
+      if (fileHeight > 245) {
+        fileHeight = 245;
+        fontHeader = 10;
+        fontbody = 7;
+        fontsmall = 6;
+        spacing = 0.8;
+      }
+
+      const FILEURI = canvas.toDataURL('image/png');
+      const PDF = new jsPDF('p', 'mm', 'a4');
+
+      PDF.addImage('/assets/images/capgemini.png', 'PNG', 5, 10, 42, 10);
+      PDF.setFontSize(fontHeader);
+      PDF.text(
+        `Calendario ${this.selectedYear.code} para ${this.selectedCenter.name} (${this.selectedCollective.name})`,
+        5,
+        30 * spacing
+      );
+
+      PDF.setFontSize(fontsmall);
+      PDF.text(
+        [
+          `Dias Festivos: ${this.diasFestivos} | Dias Vacaciones: ${this.collectiveData.holidays} | Dias Libre disposicion: ${this.collectiveData.freeDays} | Dias Asuntos propios: ${this.collectiveData.personalDays} | Dias Adicionales: ${this.collectiveData.additionalDays}`,
+        ],
+        5,
+        37 * spacing
+      );
+
+      PDF.setFontSize(fontbody);
+      PDF.setFillColor(170, 170, 255);
+      PDF.circle(7, 45 * spacing, 2, 'FD');
+      PDF.text('Festivos', 10, 45 * spacing, { baseline: 'middle' });
+
+      PDF.setFillColor(255, 170, 170);
+      PDF.circle(35, 45 * spacing, 2, 'FD');
+      const hoursIntensive = Math.trunc(this.collectiveData.hoursIntensive);
+      const minutesIntensive =
+        (this.collectiveData.hoursIntensive -
+          Math.trunc(this.collectiveData.hoursIntensive)) *
+        60;
+      const minutesIText =
+        minutesIntensive === 0 ? '' : ` ${minutesIntensive.toString()}m`;
+      PDF.text(
+        `Jornada Intensiva (${hoursIntensive}h${minutesIText})`,
+        38,
+        45 * spacing,
+        { baseline: 'middle' }
+      );
+
+      PDF.setFillColor(255, 255, 255);
+      PDF.circle(83, 45 * spacing, 2, 'FD');
+      const hours = Math.trunc(this.collectiveData.hoursWeek);
+      const minutes =
+        (this.collectiveData.hoursWeek -
+          Math.trunc(this.collectiveData.hoursWeek)) *
+        60;
+      const minutesText = minutes === 0 ? '' : ` ${minutes.toString()}m`;
+      PDF.text(`Jornada normal (${hours}h${minutesText})`, 86, 45 * spacing, {
+        baseline: 'middle',
+      });
+
+      PDF.addImage(FILEURI, 'PNG', 5, 52 * spacing, fileWidth, fileHeight);
+
+      PDF.save(
+        `${this.selectedYear.code}_${this.selectedCenter.name}_${this.selectedCollective.name}.pdf`
+      );
+      this.isLoading = false;
+    });
+  }
+
+  private getCalendars() {
     this.workCalendarService.getCalendars().subscribe({
       next: (res) => {
         this.existingCalendars = res;
@@ -126,7 +330,7 @@ export class EditCalendarComponent {
     });
   }
 
-  getDaysData() {
+  private getDaysData() {
     const calendarId = this.existingCalendars.filter(
       (eC) =>
         eC.centerId.toString() === this.selectedCenter.code &&
@@ -141,7 +345,7 @@ export class EditCalendarComponent {
       });
   }
 
-  generateCurrentCalendar(days: SaveDay[]) {
+  private generateCurrentCalendar(days: SaveDay[]) {
     let calendar = this.getSelectedCalendar();
 
     this.selectedCalendar.forEach((value: MetadataDay, key: string) => {
@@ -203,10 +407,10 @@ export class EditCalendarComponent {
     this.calculateTotals();
   }
 
-  generateDefaultCalendar(): Map<String, MetadataDay> {
-    let metadataDay = new Map<String, MetadataDay>();
-    let normalDay = this.scheduleTypes[1];
-    let weekend = new ScheduleType({
+  private generateDefaultCalendar(): Map<String, MetadataDay> {
+    const metadataDay = new Map<String, MetadataDay>();
+    const normalDay = this.scheduleTypes[1];
+    const weekend = new ScheduleType({
       name: 'Fin de semana',
       absence: true,
       color: '#ededed',
@@ -215,14 +419,12 @@ export class EditCalendarComponent {
 
     for (let month = 0; month < 12; month++) {
       for (let day = 1; day <= 31; day++) {
-        let date = new Date(parseInt(this.selectedYearAux.code), month, day);
+        const date = new Date(parseInt(this.selectedYearAux.code), month, day);
         if (date.getMonth() == month) {
-          let isWeekend = date.getDay() == 0 || date.getDay() == 6;
+          const isWeekend = date.getDay() == 0 || date.getDay() == 6;
+          const type = isWeekend ? weekend : normalDay;
 
-          let type = normalDay;
-          if (isWeekend) type = weekend;
-
-          let metadata = new MetadataDay({
+          const metadata = new MetadataDay({
             day: day,
             month: month,
             year: parseInt(this.selectedYearAux.code),
@@ -230,7 +432,7 @@ export class EditCalendarComponent {
             type: type,
           });
 
-          let key = month + '_' + day;
+          const key = month + '_' + day;
           metadataDay.set(key, metadata);
         }
       }
@@ -239,111 +441,20 @@ export class EditCalendarComponent {
     return metadataDay;
   }
 
-  changeCenter(): void {
-    this.collectives = this.existingCalendars
-      .filter((r) => r.centerId.toString() === this.selectedCenter.code)
-      .map((rs) => ({ code: rs.groupId.toString(), name: rs.groupName }));
-    if (this.collectives.find((c) => c.code === this.selectedCollective.code)) {
-      this.getDaysData();
-    } else {
-      this.selectedCollective = this.collectives[0];
-      this.changeCollective();
-    }
-  }
-
-  changeCollective(): void {
-    const calendarId = this.existingCalendars.filter(
-      (eC) =>
-        eC.centerId.toString() === this.selectedCenter.code &&
-        eC.groupId.toString() === this.selectedCollective.code
-    )[0];
-    const sources = [
-      this.collectiveService.getCollective(
-        parseInt(this.selectedCollective.code)
-      ),
-      this.workCalendarService.getDays(
-        parseInt(this.selectedYear.code),
-        calendarId.id
-      ),
-    ];
-
-    forkJoin(sources).subscribe({
-      next: (res: any[]) => {
-        this.collectiveData = res[0];
-        const hours = Math.trunc(this.collectiveData.hoursWeek);
-        const minutes =
-          (this.collectiveData.hoursWeek -
-            Math.trunc(this.collectiveData.hoursWeek)) *
-          60;
-        const hoursIntensive = Math.trunc(this.collectiveData.hoursIntensive);
-        const minutesIntensive =
-          (this.collectiveData.hoursIntensive -
-            Math.trunc(this.collectiveData.hoursIntensive)) *
-          60;
-        this.scheduleTypes[1].name = `Jornada normal (${hours}h ${minutes}m)`;
-        this.scheduleTypes[1].hours = hours;
-        this.scheduleTypes[1].minutes = minutes;
-        this.scheduleTypes[2].name = `Jornada intensiva (${hoursIntensive}h ${minutesIntensive}m)`;
-        this.scheduleTypes[2].hours = hoursIntensive;
-        this.scheduleTypes[2].minutes = minutesIntensive;
-        this.generateCurrentCalendar(res[1]);
-      },
-    });
-  }
-
-  getSelectedCalendar(): Map<String, MetadataDay> {
-    let key = this.selectedCenter.code + '_' + this.selectedCollective.code;
+  private getSelectedCalendar(): Map<String, MetadataDay> {
+    const key = this.selectedCenter.code + '_' + this.selectedCollective.code;
     return this.calendars.get(key);
   }
 
-  changeYear(): void {
-    this.confirmationService.confirm({
-      message: 'Si cambia el año se perderan todos los cambios ¿Continuar?.',
-      rejectButtonStyleClass: 'p-button p-button-secondary p-button-outlined',
-      accept: () => {
-        this.selectedYearAux = this.selectedYear;
-        this.confirmationService.close();
-        this.resetCalendar();
-        this.changeCollective();
-      },
-      reject: () => {
-        this.selectedYear = this.selectedYearAux;
-        this.confirmationService.close();
-      },
-    });
-  }
-
-  selectType(type: ScheduleType): void {
-    this.selectedType = type;
-  }
-
-  selectDate(date: any): void {
-    if (date.type == this.selectedType) date.type = date.originalType;
-    else date.type = this.selectedType;
-
-    this.changeDateInCalendarChild(date);
-    this.calculateTotals();
-  }
-
-  changeDateInCalendarChild(date: any) {
+  private changeDateInCalendarChild(date: any) {
     let calendar = this.getSelectedCalendar();
     let dateKey = date.month + '_' + date.day;
     let selectedDate = calendar.get(dateKey);
 
     selectedDate.type = date.type;
-
-    /*if(date.type.id === this.scheduleTypes[0].id) {
-      for (const [key, value] of this.calendars.entries()) {
-        if(key.split('_')[0] === this.selectedCenter.code) {
-          let dateKey = date.month + '_' + date.day;
-          let selectedDate = value.get(dateKey);
-          selectedDate.type = date.type;
-        }
-      }
-    }*/
   }
 
-  calculateTotals(): void {
+  private calculateTotals(): void {
     this.horasLaborales = 0;
     this.diasFestivos = 0;
 
@@ -370,49 +481,7 @@ export class EditCalendarComponent {
       this.collectiveData.personalDays * this.collectiveData.hoursWeek;
   }
 
-  saveDays(): void {
-    this.isLoading = true;
-
-    for (const [key, value] of this.calendars.entries()) {
-      for (const [key_day, metaDay] of value.entries()) {
-        if (metaDay.originalType.id !== metaDay.type.id) {
-          const center = key.split('_')[0];
-          const group = key.split('_')[1];
-
-          this.modifiedDays.push({
-            date: `${metaDay.year}-${metaDay.month + 1}-${metaDay.day}`,
-            categoryId: metaDay.type.id,
-            calendarId: this.existingCalendars.find(
-              (cc) =>
-                cc.centerId === parseInt(center) &&
-                cc.groupId === parseInt(group)
-            ).id,
-          });
-          const calendar = this.getSelectedCalendar();
-          calendar.get(key_day).originalType = calendar.get(key_day).type;
-        }
-      }
-    }
-
-    this.workCalendarService.saveDays(this.modifiedDays).subscribe({
-      next: () => {
-        this.snackbarService.showMessage(
-          'El calendario se ha guardado correctamente'
-        );
-        this.modifiedDays = [];
-        this.ref.close(true);
-      },
-      error: (errorResponse) => {
-        this.isLoading = false;
-        this.snackbarService.error(errorResponse['message']);
-      },
-      complete: () => {
-        this.isLoading = false;
-      },
-    });
-  }
-
-  resetCalendar(): void {
+  private resetCalendar(): void {
     this.calendars.clear();
     this.selectedCalendar = null;
     this.existingCalendars.forEach((element) => {
@@ -421,69 +490,5 @@ export class EditCalendarComponent {
       this.calendars.set(key, calendar);
     });
     this.selectedCalendar = this.generateDefaultCalendar();
-  }
-
-  openPDF(): void {
-    this.isLoading = true;
-    html2canvas(this.calendarsDiv.nativeElement, {
-      scrollX: 0,
-      scrollY: -window.scrollY,
-    }).then((canvas) => {
-      let fileWidth = 200;
-      let fileHeight = (canvas.height * fileWidth) / canvas.width;
-
-      let fontHeader = 20;
-      let fontbody = 10;
-      let fontsmall = 7;
-      let spacing = 1;
-
-      if(fileHeight > 245 ) {
-        fileHeight = 245;
-        fontHeader = 10;
-        fontbody = 7;
-        fontsmall = 6;
-        spacing=0.8;
-      }
-
-      const FILEURI = canvas.toDataURL('image/png');
-      let PDF = new jsPDF('p', 'mm', 'a4');
-
-      PDF.addImage('/assets/images/capgemini.png', 'PNG', 5, 10, 42, 10);
-      PDF.setFontSize(fontHeader);
-      PDF.text(
-        `Calendario ${this.selectedYear.code} para ${this.selectedCenter.name} (Colectivo ${this.selectedCollective.name})`,
-        5,
-        30*spacing
-      );
-
-      PDF.setFontSize(fontsmall);
-      PDF.text(
-        [
-          `Dias Festivos: ${this.diasFestivos} | Dias Vacaciones: ${this.collectiveData.holidays} | Dias Libre disposicion: ${this.collectiveData.freeDays} | Dias Asuntos propios: ${this.collectiveData.personalDays}`,
-        ],
-        5,
-        37*spacing
-      );
-
-      PDF.setFontSize(fontbody);
-      PDF.setFillColor(170, 170, 255);
-      PDF.circle(7, 45*spacing, 2, 'FD');
-      PDF.text('Festivos', 10, 45*spacing, { baseline: 'middle' });
-
-      PDF.setFillColor(255, 170, 170);
-      PDF.circle(35, 45*spacing, 2, 'FD');
-      PDF.text('Jornada Intensiva 7h', 38, 45*spacing, { baseline: 'middle' });
-
-      PDF.setFillColor(255, 255, 255);
-      PDF.circle(80, 45*spacing, 2, 'FD');
-      PDF.text('Jornada normal 8h', 83, 45*spacing, { baseline: 'middle' });
-
-      PDF.addImage(FILEURI, 'PNG', 5, 52*spacing, fileWidth, fileHeight);
-
-      PDF.save(
-        `${this.selectedYear.code}_${this.selectedCenter.name}_${this.selectedCollective.name}.pdf`
-      );
-      this.isLoading = false;
-    });
   }
 }

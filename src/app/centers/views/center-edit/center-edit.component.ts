@@ -11,13 +11,11 @@ import { SnackbarService } from 'src/app/core/services/snackbar.service';
   styleUrls: ['./center-edit.component.scss'],
 })
 export class CenterEditComponent implements OnInit {
-  centerElement: Center;
-  item: any;
-  groupCenter: any[] = [];
-  centerSelected;
   centerForm: FormGroup;
   requiredField: any = Validators.required;
   loading: boolean;
+
+  private centerElement: Center;
 
   constructor(
     private ref: DynamicDialogRef,
@@ -34,18 +32,8 @@ export class CenterEditComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading = false;
-    this.centerElement = Object.assign(
-      { },
-      this.config.data.center
-    );
+    this.centerElement = Object.assign({}, this.config.data.center);
     this.setValuesFormGroup();
-  }
-
-  setValuesFormGroup() {
-    this.centerForm.patchValue({
-      id: this.centerElement.id,
-      name: this.centerElement.name,
-    });
   }
 
   saveItem(center: Center) {
@@ -71,37 +59,16 @@ export class CenterEditComponent implements OnInit {
     this.ref.close(false);
   }
 
-  showDialog(element?: any) {
-    this.item = element;
-  }
-
-  updateFormValidators() {
-    const requiredFields = ['name'];
-    requiredFields.forEach((fieldName) => {
-      const control = this.centerForm.get(fieldName);
-      control.setValidators(Validators.required);
-      control.updateValueAndValidity();
-    });
-  }
-
-  resetFormDefaultValidators() {
-    Object.keys(this.centerForm.controls).forEach((key) => {
-      let control = this.centerForm.get(key);
-      control.clearValidators();
-      control.updateValueAndValidity();
-    });
-
-    const requiredFields = ['name'];
-    requiredFields.forEach((fieldName) => {
-      const control = this.centerForm.get(fieldName);
-      control.setValidators(Validators.required);
-      control.updateValueAndValidity();
-    });
-  }
-
   getErrorClass(field: string): string {
     if (this.centerForm.controls[field].status == 'INVALID')
       return 'field-error';
     return '';
+  }
+
+  private setValuesFormGroup() {
+    this.centerForm.patchValue({
+      id: this.centerElement.id,
+      name: this.centerElement.name,
+    });
   }
 }

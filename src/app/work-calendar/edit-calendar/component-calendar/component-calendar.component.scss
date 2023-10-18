@@ -1,53 +1,55 @@
 .title {
-    color: rgba(0, 0, 0, 0.87); 
-    font-weight: 500; 
-    font-size: 1rem; 
-    font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif;
+  color: rgba(0, 0, 0, 0.87);
+  font-weight: 500;
+  font-size: 1rem;
+  font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial,
+    Lucida Grande, sans-serif;
 }
 
 .week-title {
-    width: 52px; 
-    text-align: center;
+  width: 52px;
+  text-align: center;
 
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    margin: 0.5rem 0;
-    padding: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  margin: 0.5rem 0;
+  padding: 0.5rem;
 
-    color: rgba(0, 0, 0, 0.38);
-    font-weight: 400;
-    font-size: 0.875rem;
-    font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif;
+  color: rgba(0, 0, 0, 0.38);
+  font-weight: 400;
+  font-size: 0.875rem;
+  font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial,
+    Lucida Grande, sans-serif;
 }
 
-.day, .disable-day {
-    width: 36px; 
-    height: 36px; 
-    text-align: center;
+.day,
+.disable-day {
+  width: 36px;
+  height: 36px;
+  text-align: center;
 
-    
-    /*border: 1px solid rgba(0, 0, 0, 0.12);*/
-    color: rgb(0, 0, 0);
-    border-radius: 50%;
-    margin: 0.5rem 0;
-    padding: 0.5rem;
-    
-    font-weight: 400;
-    font-size: 1rem;
-    font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif;
-    
+  /*border: 1px solid rgba(0, 0, 0, 0.12);*/
+  color: rgb(0, 0, 0);
+  border-radius: 50%;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+
+  font-weight: 400;
+  font-size: 1rem;
+  font-family: Roboto, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial,
+    Lucida Grande, sans-serif;
 }
 
-.day:hover, 
+.day:hover,
 .disable-day:hover {
-    outline: 1px solid rgba(0, 0, 255, 0.2);
+  outline: 1px solid rgba(0, 0, 255, 0.2);
 }
 
-.day {    
-    cursor: pointer;
+.day {
+  cursor: pointer;
 }
 
 .disable-day {
-    opacity: 0.4;
+  opacity: 0.4;
 
-    cursor: default;
+  cursor: default;
 }

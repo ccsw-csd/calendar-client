@@ -4,7 +4,7 @@
 <div [formGroup]="collectiveForm" class="flex flex-column gap-3">
   <div
     class="flex flex-row gap-2"
-    [ngClass]="{ 'pt-2': collectiveElement.id != null }"
+    [ngClass]="{ 'pt-2': collectiveElement.id !== null }"
   >
     <span class="p-float-label flex-1">
       <input
@@ -104,9 +104,6 @@
       >
     </span>
   </div>
-
-
-
   <div class="flex flex-row gap-2">
     <span class="flex-1">
       <p-checkbox
@@ -117,7 +114,6 @@
       <label for="ny">Jornada Intensiva</label>
     </span>
   </div>
-
   <div
     class="flex flex-row gap-2"
     *ngIf="this.collectiveForm.get('checkIntensive').value"
@@ -134,7 +130,6 @@
         >Horas Intensiva<span class="text-red-600 text-base">*</span></label
       >
     </span>
-
     <span class="p-float-label flex-1">
       <p-calendar
         [style]="{ width: '100%' }"
@@ -147,7 +142,6 @@
         >Inicio intensiva<span class="text-red-600 text-base">*</span></label
       >
     </span>
-
     <span class="p-float-label flex-1">
       <p-calendar
         [style]="{ width: '100%' }"

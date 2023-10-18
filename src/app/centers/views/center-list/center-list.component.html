@@ -1,3 +1,6 @@
+<div class="spinner-overlay">
+    <p-progressSpinner *ngIf="loading"></p-progressSpinner>
+  </div>
 <div class="flex flex-row justify-content-between">
     <div class="flex justify-content-start">
         <h3 class="p-0 m-0 mb-2">
@@ -23,12 +26,12 @@
 
 <p-table [style]="{'height': 'calc(100vh - 210px)', 'width':tableWidth }" [scrollable]="true" scrollHeight="flex" selectionMode="single" [value]="centers"
     styleClass="p-datatable-striped " [paginator]="false" sortField="name" [sortOrder]="1"
-    [(filters)]="defaultFilters" (onFilter)="onFilter($event)" [columns]="selectedColumnNames" [reorderableColumns]="true" (onColReorder)="onColReorder($event)">
+    [(filters)]="defaultFilters" [columns]="selectedColumnNames" [reorderableColumns]="true" (onColReorder)="onColReorder()">
     <ng-template pTemplate="header" let-columns >
         <tr>
             <th *ngFor="let col of selectedColumnNames" class="{{col.field}} flex flex-column" pReorderableColumn>
                 <div class="flex flex-row mb-2" pSortableColumn="{{col.composeField}}">{{col.header}}<p-sortIcon field="{{col.composeField}}"></p-sortIcon></div>
-                <p-columnFilter *ngIf="col.filterType == 'input'" class="w-full" type="text" field="{{col.composeField}}" [showMenu]="false" [showClearButton]="false" matchMode="contains-and-null"></p-columnFilter>
+                <p-columnFilter *ngIf="col.filterType === 'input'" class="w-full" type="text" field="{{col.composeField}}" [showMenu]="false" [showClearButton]="false" matchMode="contains-and-null"></p-columnFilter>
             </th>
             <th class="buttons"></th>
         </tr>

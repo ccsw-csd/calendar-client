@@ -1,14 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { MessageService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { Calendar, Collective } from '../../models/Collective';
+import { Collective } from '../../models/Collective';
 import { CollectiveService } from '../../services/collective.service';
 import {
   FormGroup,
   Validators,
   FormBuilder,
   AbstractControl,
-  FormControl,
 } from '@angular/forms';
 import { SnackbarService } from 'src/app/core/services/snackbar.service';
 import { CenterService } from 'src/app/centers/services/center.service';
@@ -23,14 +21,12 @@ import { of } from 'rxjs/internal/observable/of';
 })
 export class CollectiveEditComponent implements OnInit {
   collectiveElement: Collective;
-  item: any;
-  groupCollective: any[] = [];
-  collectiveSelected;
   collectiveForm: FormGroup;
   requiredField: any = Validators.required;
   loading: boolean;
   centers: Center[] = [];
-  numRegex = /^-?\d*[.,]?\d{0,2}$/;
+
+  private numRegex = /^-?\d*[.,]?\d{0,2}$/;
 
   constructor(
     private ref: DynamicDialogRef,
@@ -76,28 +72,6 @@ export class CollectiveEditComponent implements OnInit {
     }
   }
 
-  setValuesFormGroup() {
-    this.collectiveForm.patchValue({
-      id: this.collectiveElement.id,
-      name: this.collectiveElement.name,
-      maxHourYear: this.collectiveElement.maxHourYear,
-      hoursWeek: this.collectiveElement.hoursWeek,
-      hoursF: this.collectiveElement.hoursF,
-      freeDays: this.collectiveElement.freeDays,
-      personalDays: this.collectiveElement.personalDays,
-      holidays: this.collectiveElement.holidays,
-      additionalDays: this.collectiveElement.additionalDays,
-      hoursIntensive: this.collectiveElement.hoursIntensive,
-      intensiveFrom: this.collectiveElement.intensiveFrom
-        ? new Date(this.collectiveElement.intensiveFrom)
-        : '',
-      intensiveTo: this.collectiveElement.intensiveTo
-        ? new Date(this.collectiveElement.intensiveTo)
-        : '',
-      checkIntensive: this.collectiveElement.hoursIntensive ? true : false,
-    });
-  }
-
   saveItem(collective: Collective) {
     this.loading = true;
     this.collectiveService.save(collective).subscribe({
@@ -121,36 +95,6 @@ export class CollectiveEditComponent implements OnInit {
     this.ref.close(false);
   }
 
-  showDialog(element?: any) {
-    this.item = element;
-  }
-
-  searchCollective($event) {}
-
-  updateFormValidators() {
-    const requiredFields = ['name', 'max', 'hours', 'hoursF', 'holyDays'];
-    requiredFields.forEach((fieldName) => {
-      const control = this.collectiveForm.get(fieldName);
-      control.setValidators(Validators.required);
-      control.updateValueAndValidity();
-    });
-  }
-
-  resetFormDefaultValidators() {
-    Object.keys(this.collectiveForm.controls).forEach((key) => {
-      let control = this.collectiveForm.get(key);
-      control.clearValidators();
-      control.updateValueAndValidity();
-    });
-
-    const requiredFields = ['name', 'max', 'hours', 'hoursF', 'holyDays'];
-    requiredFields.forEach((fieldName) => {
-      const control = this.collectiveForm.get(fieldName);
-      control.setValidators(Validators.required);
-      control.updateValueAndValidity();
-    });
-  }
-
   getErrorClass(field: string): string {
     return this.collectiveForm.controls[field].status == 'INVALID' &&
       this.collectiveForm.controls[field].touched
@@ -158,18 +102,39 @@ export class CollectiveEditComponent implements OnInit {
       : '';
   }
 
-  intensiveValidators(formControl: AbstractControl) {
+  private setValuesFormGroup() {
+    this.collectiveForm.patchValue({
+      id: this.collectiveElement.id,
+      name: this.collectiveElement.name,
+      maxHourYear: this.collectiveElement.maxHourYear,
+      hoursWeek: this.collectiveElement.hoursWeek,
+      hoursF: this.collectiveElement.hoursF,
+      freeDays: this.collectiveElement.freeDays,
+      personalDays: this.collectiveElement.personalDays,
+      holidays: this.collectiveElement.holidays,
+      additionalDays: this.collectiveElement.additionalDays,
+      hoursIntensive: this.collectiveElement.hoursIntensive,
+      intensiveFrom: this.collectiveElement.intensiveFrom
+        ? new Date(this.collectiveElement.intensiveFrom)
+        : '',
+      intensiveTo: this.collectiveElement.intensiveTo
+        ? new Date(this.collectiveElement.intensiveTo)
+        : '',
+      checkIntensive: this.collectiveElement.hoursIntensive ? true : false,
+    });
+  }
+
+  private intensiveValidators(formControl: AbstractControl) {
     if (!formControl.parent) {
       return null;
     }
-
     if (formControl.parent.get('checkIntensive').value) {
       return Validators.required(formControl);
     }
     return null;
   }
 
-  getAllCenters() {
+  private getAllCenters() {
     const sources = [
       this.centerService.getAllCenters(),
       Object.keys(this.collectiveElement).length !== 0
@@ -191,7 +156,7 @@ export class CollectiveEditComponent implements OnInit {
           }
           return 0;
         });
-        
+
         if (res[1]) {
           this.collectiveForm
             .get('centersSelected')

@@ -1,4 +1,4 @@
-export interface Center{
-    id:number;
-    name:string;
+export interface Center {
+  id: number;
+  name: string;
 }
