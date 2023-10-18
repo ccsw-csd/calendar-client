@@ -1,0 +1,75 @@
+<div class="flex flex-row justify-content-between">
+    <div class="flex justify-content-start">
+        <h3 class="p-0 m-0 mb-2">
+            Gestión colectivos
+        </h3>
+    </div>
+</div>
+
+<div class="flex flex-row justify-content-between">
+    <div class="flex w-9rem h-2rem gap-2 border-round-2xl align-items-center mt-3" style="background-color:#e7edef">
+        <div class="pl-3">
+            <i class="pi pi-users text-xl text-primary"></i>
+        </div>
+        <div class="flex flex-row align-items-center gap-1 text-sm">
+            <p>{{collectives.length}}</p>Colectivos
+        </div>
+    </div>
+    <div>
+        <button tooltipPosition="top" pButton pRipple type="button" icon="pi pi-plus-circle" class="p-button-lg m-2 p-button-outlined" pTooltip="Añadir colectivo" (click)="editCollective(null)"></button>
+        <button tooltipPosition="top" pButton pRipple type="button" icon="pi pi-filter-slash" class="p-button-lg m-2 p-button-outlined p-button-secondary" pTooltip="Limpiar filtros" (click)="cleanFilters()"></button>
+    </div>
+</div>
+
+<p-table [style]="{'height': 'calc(100vh - 210px)', 'width':tableWidth }" [scrollable]="true" scrollHeight="flex" selectionMode="single" [value]="collectives"
+    styleClass="p-datatable-striped " [paginator]="false" sortField="name" [sortOrder]="1"
+    [(filters)]="defaultFilters" (onFilter)="onFilter($event)" [columns]="selectedColumnNames" [reorderableColumns]="true" (onColReorder)="onColReorder($event)">
+    <ng-template pTemplate="header" let-columns >
+        <tr>
+
+            <th *ngFor="let col of selectedColumnNames" class="{{col.field}} flex flex-column" pReorderableColumn>
+                <div class="flex flex-row mb-2" pSortableColumn="{{col.composeField}}">{{col.header}}<p-sortIcon field="{{col.composeField}}"></p-sortIcon></div>
+
+                <p-columnFilter *ngIf="col.filterType == 'input'" class="w-full" type="text" field="{{col.composeField}}" [showMenu]="false" [showClearButton]="false" matchMode="contains-and-null"></p-columnFilter>
+
+                <p-columnFilter *ngIf="col.filterType == 'dropdown'" class="w-full " field="{{col.composeField}}" matchMode="contains-and-null" [showMenu]="false" [showClearButton]="false">
+                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <p-dropdown #filterDropdown [options]="col.options" optionLabel="{{col.optionLabel}}" (onChange)="filter($event.value == null ? null : $event.value[col.optionLabel])" [showClear]="true" placeholder="..." [showClearButton]="false"></p-dropdown>
+                    </ng-template>
+                </p-columnFilter>
+
+                <p-columnFilter *ngIf="col.filterType == 'multiple'" class="w-full" field="{{col.composeField}}" matchMode="multiple" [showMenu]="false" [showClearButton]="false" value="1">
+                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <p-multiSelect [ngModel]="col.initialValue" [options]="col.options" optionLabel="label" optionValue="value" (onChange)="filter($event.value)" [showClear]="true" placeholder="..."> </p-multiSelect>
+                    </ng-template>
+                </p-columnFilter>
+            </th>
+            <th class="buttons"></th>
+        </tr>
+
+    </ng-template>
+    <ng-template pTemplate="body" let-collective let-columns="columns">
+        <tr [pSelectableRow]="collective" (dblclick)="editCollective(collective)">
+            <td *ngFor="let col of selectedColumnNames" class="{{col.field}}">
+                <div *ngIf="!col.fieldExtra && !col.parse" class="white-space-nowrap overflow-hidden text-overflow-ellipsis" pTooltip="{{collective[col.field]}}" tooltipPosition="top">
+                    {{collective[col.field]}}
+                </div>
+                <div *ngIf="col.fieldExtra && !col.parse" class="white-space-nowrap overflow-hidden text-overflow-ellipsis" pTooltip="{{collective[col.field]?.[col.fieldExtra]}}" tooltipPosition="top">
+                    {{collective[col.field]?.[col.fieldExtra]}}
+                </div>
+                <div *ngIf="col.parse" class="white-space-nowrap overflow-hidden text-overflow-ellipsis" pTooltip="{{col.parse(collective[col.field])}}" tooltipPosition="top">
+                    {{col.parse(collective[col.field])}}
+                </div>
+            </td>
+            <td class="buttons pl-0">
+                <div class="flex flex-row">
+                    <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-text" pTooltip="Editar" (click)="editCollective(collective)"></button>
+                    <button pButton pRipple type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text" pTooltip="Eliminar" (click)="deleteCollective(collective.id)"></button>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-toast position="top-center"></p-toast>
+<p-confirmDialog header="Confirmación" icon="pi pi-exclamation-triangle" #confirmDialog></p-confirmDialog>

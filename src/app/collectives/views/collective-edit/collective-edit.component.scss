@@ -1,0 +1,17 @@
+.spinner-overlay {
+    position: fixed;
+    z-index: 9999;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+}
+::ng-deep p-multiselect .p-multiselect-label{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+::ng-deep p-multiselect .p-multiselect-token{
+    margin-bottom: .5rem
+}

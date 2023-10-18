@@ -1,0 +1,183 @@
+<div class="spinner-overlay">
+  <p-progressSpinner *ngIf="loading"></p-progressSpinner>
+</div>
+<div [formGroup]="collectiveForm" class="flex flex-column gap-3">
+  <div
+    class="flex flex-row gap-2"
+    [ngClass]="{ 'pt-2': collectiveElement.id != null }"
+  >
+    <span class="p-float-label flex-1">
+      <input
+        id="name"
+        type="text"
+        pInputText
+        class="w-full {{ getErrorClass('name') }}"
+        formControlName="name"
+      />
+      <label
+        >Nombre<span
+          class="text-red-600 text-base"
+          *ngIf="collectiveForm.get('name').hasValidator(requiredField)"
+          >*</span
+        ></label
+      >
+    </span>
+  </div>
+
+  <div class="flex flex-row gap-2">
+    <span class="p-float-label flex-1">
+      <p-multiSelect [options]="centers" display="chip" formControlName="centersSelected" optionLabel="name" class="w-full" [style]="{'min-width':'100%'}"></p-multiSelect>
+      <label>Centros asociados</label>
+    </span>
+  </div>
+
+  <div class="flex flex-row gap-2">
+    <span class="p-float-label flex-1">
+      <input
+        id="name"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('maxHourYear') }}"
+        formControlName="maxHourYear"
+      />
+      <label
+        >Jornada Maxima Anual<span class="text-red-600 text-base"
+          >*</span
+        ></label
+      >
+    </span>
+    <span class="p-float-label flex-1">
+      <input
+        id="hours"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('hoursWeek') }}"
+        formControlName="hoursWeek"
+      />
+      <label>Horas L-J<span class="text-red-600 text-base">*</span></label>
+    </span>
+
+    <span class="p-float-label flex-1">
+      <input
+        id="hoursF"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('hoursF') }}"
+        formControlName="hoursF"
+      />
+      <label>Horas V<span class="text-red-600 text-base">*</span></label>
+    </span>
+  </div>
+
+  <div class="flex flex-row gap-2">
+    <span class="p-float-label mb-1 flex-1">
+      <input
+        id="personalDays"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('personalDays') }}"
+        formControlName="personalDays"
+      />
+      <label>Dias asuntos propios</label></span
+    >
+
+    <span class="p-float-label flex-1">
+      <input
+        id="name"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('additionalDays') }}"
+        formControlName="additionalDays"
+      />
+      <label>Dias adicionales</label>
+    </span>
+    <span class="p-float-label flex-1" style="min-width: 196px">
+      <input
+        id="name"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('holidays') }}"
+        formControlName="holidays"
+      />
+      <label
+        >Dias Vacaciones<span class="text-red-600 text-base">*</span></label
+      >
+    </span>
+  </div>
+
+
+
+  <div class="flex flex-row gap-2">
+    <span class="flex-1">
+      <p-checkbox
+        formControlName="checkIntensive"
+        [binary]="true"
+        inputId="binary"
+      ></p-checkbox>
+      <label for="ny">Jornada Intensiva</label>
+    </span>
+  </div>
+
+  <div
+    class="flex flex-row gap-2"
+    *ngIf="this.collectiveForm.get('checkIntensive').value"
+  >
+    <span class="p-float-label flex-1">
+      <input
+        id="hoursIntensive"
+        type="number"
+        pInputText
+        class="w-full {{ getErrorClass('hoursIntensive') }}"
+        formControlName="hoursIntensive"
+      />
+      <label
+        >Horas Intensiva<span class="text-red-600 text-base">*</span></label
+      >
+    </span>
+
+    <span class="p-float-label flex-1">
+      <p-calendar
+        [style]="{ width: '100%' }"
+        [inputStyle]="{ width: '100%' }"
+        formControlName="intensiveFrom"
+        appendTo="body"
+        [maxDate]="collectiveForm.get('intensiveTo').value"
+      ></p-calendar>
+      <label
+        >Inicio intensiva<span class="text-red-600 text-base">*</span></label
+      >
+    </span>
+
+    <span class="p-float-label flex-1">
+      <p-calendar
+        [style]="{ width: '100%' }"
+        [inputStyle]="{ width: '100%' }"
+        formControlName="intensiveTo"
+        appendTo="body"
+        [minDate]="collectiveForm.get('intensiveFrom').value"
+      ></p-calendar>
+      <label>Fin intensiva<span class="text-red-600 text-base">*</span></label>
+    </span>
+  </div>
+</div>
+
+<div class="flex flex-row mt-5 gap-3 justify-content-end gap-2">
+  <button
+    pButton
+    pRipple
+    styleClass=""
+    label="Cancelar"
+    icon="pi pi-times"
+    class="p-button p-button-secondary p-button-outlined"
+    (click)="closeWindow()"
+  ></button>
+  <button
+    pButton
+    pRipple
+    p-button-label="10px"
+    label="Guardar"
+    icon="pi pi-check"
+    [disabled]="!collectiveForm.valid || loading"
+    (click)="saveItem(collectiveForm.value)"
+  ></button>
+</div>

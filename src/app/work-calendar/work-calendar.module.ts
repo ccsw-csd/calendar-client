@@ -7,6 +7,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ComponentCalendarComponent } from './edit-calendar/component-calendar/component-calendar.component';
+import { DynamicDialogModule } from 'primeng/dynamicdialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
 
 @NgModule({
   declarations: [
@@ -21,6 +24,9 @@ import { ComponentCalendarComponent } from './edit-calendar/component-calendar/c
     ButtonModule,
     DropdownModule,
     CalendarModule,
+    DynamicDialogModule,
+    ConfirmDialogModule,
+    ToastModule
   ]
 })
 export class WorkCalendarModule { }

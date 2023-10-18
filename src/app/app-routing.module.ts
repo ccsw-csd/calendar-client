@@ -17,6 +17,8 @@ const routes: Routes = [
     resolve: {credentials: RefreshTokenResolverService},
     children: [
       { path: 'edit-calendar', component: EditCalendarComponent},
+      { path: 'centers', loadChildren: () => import('./centers/centers.module').then(m => m.CentersModule)},
+      { path: 'collectives', loadChildren: () => import('./collectives/collectives.module').then(m => m.CollectivesModule)},
       { path: '**', redirectTo: 'edit-calendar', pathMatch: 'full' },
     ]
   },  

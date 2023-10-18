@@ -26,25 +26,13 @@ export class NavComponent implements OnInit {
 
     this.items = [
       {
-        label: "Gestión Personal", routerLink: '/personal'
+        label: "Gestión calendarios", routerLink: '/edit-calendar'
       },
       {
-        label: "Gestión Becarios", routerLink: '/intern'
+        label: "Gestión colectivos", routerLink: '/collectives'
       },
       {
-        label: "Pyramid Index", routerLink: '/pyramid'
-      },
-      {
-        label: "Pyramid Team Index", routerLink: '/pyramid-team'
-      },
-      {
-        label: "Mantenimiento",
-        expanded: true,
-        items: [
-          {label: "Centros Educativos", routerLink: '/education-center'},
-          {label: "Titulaciones", routerLink: '/education'},
-          {label: "Tecnologías", routerLink: '/technology'}
-       ]
+        label: "Gestión centros", routerLink: '/centers'
       }
     ];
 

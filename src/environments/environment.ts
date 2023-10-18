@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   appCode: 'calendarManager',
-  server: 'http://localhost:8080',
+  server: 'http://frparccsw:8006',
   sso: 'http://frparccsw/dev/sso'
 };
 
