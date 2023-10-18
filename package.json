@@ -25,6 +25,8 @@
     "cptable-fixed-xlsx-style": "^0.8.20",
     "date-fns": "^2.29.3",
     "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "primeflex": "^3.2.1",

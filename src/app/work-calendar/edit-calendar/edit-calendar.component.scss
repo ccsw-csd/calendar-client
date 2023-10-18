@@ -1,3 +1,11 @@
 .selected-type {
-    border: lightskyblue thin solid;
+  border: lightskyblue thin solid;
+}
+
+.panel {
+  width: 350px;
+  height: 80vh;
+  position: sticky;
+  align-self: flex-start;
+  top: 2rem;
 }

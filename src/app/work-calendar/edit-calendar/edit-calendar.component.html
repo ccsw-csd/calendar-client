@@ -8,11 +8,11 @@
 </h3>
 
 <div style="display: flex; flex-direction: row;">
-    <div id="calendarsDiv" style="display: flex; flex:1; flex-direction: row; flex-wrap: wrap; overflow-y: auto; height: calc(100vh - 190px); gap: 20px; justify-content: space-evenly;">
+    <div id="calendarsDiv" #calendarsDiv style="display: flex; flex:1; flex-direction: row; flex-wrap: wrap; overflow-y: auto; gap: 20px; justify-content: space-evenly; margin-bottom: 2rem;">
         <app-component-calendar *ngFor="let month of [0,1,2,3,4,5,6,7,8,9,10,11]" [year]="1 * this.selectedYearAux.code" [month]="month" [metadataDay]="selectedCalendar" (clickEvent)="selectDate($event)"></app-component-calendar>
     </div>
 
-    <div style="width: 350px" class="flex flex-column">
+    <div class="flex flex-column panel">
         <h3 class="mt-0 text-center">Tipos de horario</h3>
 
         <div class="ml-5" style="display:flex; flex-direction: column; gap: 5px;">
@@ -57,7 +57,7 @@
         </div>
 
         <div class="mt-3 text-center">
-            
+            <p-button icon="pi pi-save" styleClass="p-button" label="Generar PDF" (click)="openPDF()"></p-button>
         </div>
 
     </div>

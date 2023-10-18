@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { ScheduleType } from '../model/schedule-type';
 import { MetadataDay } from '../model/metadata-day';
 import { DropdownEntry } from '../model/dropdown-entry';
@@ -10,7 +10,8 @@ import { SnackbarService } from 'src/app/core/services/snackbar.service';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ConfirmationService } from 'primeng/api';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
-
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 @Component({
   selector: 'app-edit-calendar',
   templateUrl: './edit-calendar.component.html',
@@ -18,6 +19,9 @@ import { forkJoin } from 'rxjs/internal/observable/forkJoin';
   providers: [DynamicDialogRef, ConfirmationService],
 })
 export class EditCalendarComponent {
+  @ViewChild('calendarsDiv') calendarsDiv: ElementRef;
+  @ViewChild('dataDiv') dataDiv: ElementRef;
+
   isLoading: boolean = true;
   horasLaborales: number = 0;
   diasFestivos: number = 0;
@@ -110,7 +114,7 @@ export class EditCalendarComponent {
         this.selectedCollective = this.collectives[0];
         this.changeCollective();
 
-        this.existingCalendars.forEach(element => {
+        this.existingCalendars.forEach((element) => {
           let calendar = this.generateDefaultCalendar();
           let key = element.centerId + '_' + element.groupId;
           this.calendars.set(key, calendar);
@@ -128,14 +132,13 @@ export class EditCalendarComponent {
         eC.centerId.toString() === this.selectedCenter.code &&
         eC.groupId.toString() === this.selectedCollective.code
     )[0];
-    this.workCalendarService.getDays(
-      parseInt(this.selectedYear.code),
-      calendarId.id
-    ).subscribe({
-      next: (res) => {
-        this.generateCurrentCalendar(res);
-      }
-    });
+    this.workCalendarService
+      .getDays(parseInt(this.selectedYear.code), calendarId.id)
+      .subscribe({
+        next: (res) => {
+          this.generateCurrentCalendar(res);
+        },
+      });
   }
 
   generateCurrentCalendar(days: SaveDay[]) {
@@ -146,8 +149,12 @@ export class EditCalendarComponent {
       value.originalType = day.originalType;
       value.type = day.type;
 
-      const isFriday = new Date(value.year, value.month, value.day).getDay()===5;
-      if(this.collectiveData.hoursF !== this.collectiveData.hoursWeek && isFriday) {
+      const isFriday =
+        new Date(value.year, value.month, value.day).getDay() === 5;
+      if (
+        this.collectiveData.hoursF !== this.collectiveData.hoursWeek &&
+        isFriday
+      ) {
         value.type = this.scheduleTypes[2];
         value.originalType = this.scheduleTypes[2];
         day.type = this.scheduleTypes[2];
@@ -155,13 +162,13 @@ export class EditCalendarComponent {
       }
     });
 
-    if(this.collectiveData.intensiveFrom && this.collectiveData.intensiveTo) {
+    if (this.collectiveData.intensiveFrom && this.collectiveData.intensiveTo) {
       const dateFrom = new Date(this.collectiveData.intensiveFrom);
       const dateTo = new Date(this.collectiveData.intensiveTo);
       dateFrom.setFullYear(parseInt(this.selectedYear.code));
       dateTo.setFullYear(parseInt(this.selectedYear.code));
       for (let d = dateFrom; d <= dateTo; d.setDate(d.getDate() + 1)) {
-        if(d.getDay() !== 0 && d.getDay() !==6) {
+        if (d.getDay() !== 0 && d.getDay() !== 6) {
           const key = `${d.getMonth()}_${d.getDate()}`;
           this.selectedCalendar.get(key).type = this.scheduleTypes[2];
           this.selectedCalendar.get(key).originalType = this.scheduleTypes[2];
@@ -171,23 +178,30 @@ export class EditCalendarComponent {
       }
     }
 
-    days.forEach(day => {
+    days.forEach((day) => {
       const dayDate = new Date(day.date);
-      if(dayDate.getDay() !== 0 && dayDate.getDay() !==6) {
+      if (dayDate.getDay() !== 0 && dayDate.getDay() !== 6) {
         const key = `${dayDate.getMonth()}_${dayDate.getDate()}`;
-        
-        if(calendar.get(key).type.id === calendar.get(key).originalType.id) {
-          this.selectedCalendar.get(key).type = this.scheduleTypes.find(sT => sT.id === day.categoryId);
-          this.selectedCalendar.get(key).originalType = this.scheduleTypes.find(sT => sT.id === day.categoryId);
-          calendar.get(key).type = this.scheduleTypes.find(sT => sT.id === day.categoryId);
-          calendar.get(key).originalType = this.scheduleTypes.find(sT => sT.id === day.categoryId);
+
+        if (calendar.get(key).type.id === calendar.get(key).originalType.id) {
+          this.selectedCalendar.get(key).type = this.scheduleTypes.find(
+            (sT) => sT.id === day.categoryId
+          );
+          this.selectedCalendar.get(key).originalType = this.scheduleTypes.find(
+            (sT) => sT.id === day.categoryId
+          );
+          calendar.get(key).type = this.scheduleTypes.find(
+            (sT) => sT.id === day.categoryId
+          );
+          calendar.get(key).originalType = this.scheduleTypes.find(
+            (sT) => sT.id === day.categoryId
+          );
         }
       }
     });
-    
+
     this.calculateTotals();
   }
-
 
   generateDefaultCalendar(): Map<String, MetadataDay> {
     let metadataDay = new Map<String, MetadataDay>();
@@ -196,7 +210,7 @@ export class EditCalendarComponent {
       name: 'Fin de semana',
       absence: true,
       color: '#ededed',
-      id: 9
+      id: 9,
     });
 
     for (let month = 0; month < 12; month++) {
@@ -257,9 +271,15 @@ export class EditCalendarComponent {
       next: (res: any[]) => {
         this.collectiveData = res[0];
         const hours = Math.trunc(this.collectiveData.hoursWeek);
-        const minutes = (this.collectiveData.hoursWeek - Math.trunc(this.collectiveData.hoursWeek))*60;
-        const hoursIntensive =  Math.trunc(this.collectiveData.hoursIntensive);
-        const minutesIntensive = (this.collectiveData.hoursIntensive - Math.trunc(this.collectiveData.hoursIntensive))*60;
+        const minutes =
+          (this.collectiveData.hoursWeek -
+            Math.trunc(this.collectiveData.hoursWeek)) *
+          60;
+        const hoursIntensive = Math.trunc(this.collectiveData.hoursIntensive);
+        const minutesIntensive =
+          (this.collectiveData.hoursIntensive -
+            Math.trunc(this.collectiveData.hoursIntensive)) *
+          60;
         this.scheduleTypes[1].name = `Jornada normal (${hours}h ${minutes}m)`;
         this.scheduleTypes[1].hours = hours;
         this.scheduleTypes[1].minutes = minutes;
@@ -336,27 +356,31 @@ export class EditCalendarComponent {
       }
     }
 
-    const holidays = this.collectiveData.hoursIntensive ? 
-      (((this.collectiveData.holidays / 2)*this.collectiveData.hoursWeek)+((this.collectiveData.holidays / 2)*this.collectiveData.hoursIntensive)) :
-      this.collectiveData.holidays*this.collectiveData.hoursWeek;
+    const holidays = this.collectiveData.hoursIntensive
+      ? (this.collectiveData.holidays / 2) * this.collectiveData.hoursWeek +
+        (this.collectiveData.holidays / 2) * this.collectiveData.hoursIntensive
+      : this.collectiveData.holidays * this.collectiveData.hoursWeek;
 
     this.horasLaborales -= holidays;
-    this.horasLaborales -= this.collectiveData.additionalDays*this.collectiveData.hoursWeek;
-    this.horasLaborales -= this.collectiveData.freeDays*this.collectiveData.hoursWeek;
-    this.horasLaborales -= this.collectiveData.personalDays*this.collectiveData.hoursWeek;
+    this.horasLaborales -=
+      this.collectiveData.additionalDays * this.collectiveData.hoursWeek;
+    this.horasLaborales -=
+      this.collectiveData.freeDays * this.collectiveData.hoursWeek;
+    this.horasLaborales -=
+      this.collectiveData.personalDays * this.collectiveData.hoursWeek;
   }
 
   saveDays(): void {
     this.isLoading = true;
-    
+
     for (const [key, value] of this.calendars.entries()) {
       for (const [key_day, metaDay] of value.entries()) {
         if (metaDay.originalType.id !== metaDay.type.id) {
           const center = key.split('_')[0];
           const group = key.split('_')[1];
-          
+
           this.modifiedDays.push({
-            date: `${metaDay.year}-${metaDay.month+1}-${metaDay.day}`,
+            date: `${metaDay.year}-${metaDay.month + 1}-${metaDay.day}`,
             categoryId: metaDay.type.id,
             calendarId: this.existingCalendars.find(
               (cc) =>
@@ -391,11 +415,75 @@ export class EditCalendarComponent {
   resetCalendar(): void {
     this.calendars.clear();
     this.selectedCalendar = null;
-    this.existingCalendars.forEach(element => {
+    this.existingCalendars.forEach((element) => {
       let calendar = this.generateDefaultCalendar();
       let key = element.centerId + '_' + element.groupId;
       this.calendars.set(key, calendar);
     });
     this.selectedCalendar = this.generateDefaultCalendar();
+  }
+
+  openPDF(): void {
+    this.isLoading = true;
+    html2canvas(this.calendarsDiv.nativeElement, {
+      scrollX: 0,
+      scrollY: -window.scrollY,
+    }).then((canvas) => {
+      let fileWidth = 200;
+      let fileHeight = (canvas.height * fileWidth) / canvas.width;
+
+      let fontHeader = 20;
+      let fontbody = 10;
+      let fontsmall = 7;
+      let spacing = 1;
+
+      if(fileHeight > 245 ) {
+        fileHeight = 245;
+        fontHeader = 10;
+        fontbody = 7;
+        fontsmall = 6;
+        spacing=0.8;
+      }
+
+      const FILEURI = canvas.toDataURL('image/png');
+      let PDF = new jsPDF('p', 'mm', 'a4');
+
+      PDF.addImage('/assets/images/capgemini.png', 'PNG', 5, 10, 42, 10);
+      PDF.setFontSize(fontHeader);
+      PDF.text(
+        `Calendario ${this.selectedYear.code} para ${this.selectedCenter.name} (Colectivo ${this.selectedCollective.name})`,
+        5,
+        30*spacing
+      );
+
+      PDF.setFontSize(fontsmall);
+      PDF.text(
+        [
+          `Dias Festivos: ${this.diasFestivos} | Dias Vacaciones: ${this.collectiveData.holidays} | Dias Libre disposicion: ${this.collectiveData.freeDays} | Dias Asuntos propios: ${this.collectiveData.personalDays}`,
+        ],
+        5,
+        37*spacing
+      );
+
+      PDF.setFontSize(fontbody);
+      PDF.setFillColor(170, 170, 255);
+      PDF.circle(7, 45*spacing, 2, 'FD');
+      PDF.text('Festivos', 10, 45*spacing, { baseline: 'middle' });
+
+      PDF.setFillColor(255, 170, 170);
+      PDF.circle(35, 45*spacing, 2, 'FD');
+      PDF.text('Jornada Intensiva 7h', 38, 45*spacing, { baseline: 'middle' });
+
+      PDF.setFillColor(255, 255, 255);
+      PDF.circle(80, 45*spacing, 2, 'FD');
+      PDF.text('Jornada normal 8h', 83, 45*spacing, { baseline: 'middle' });
+
+      PDF.addImage(FILEURI, 'PNG', 5, 52*spacing, fileWidth, fileHeight);
+
+      PDF.save(
+        `${this.selectedYear.code}_${this.selectedCenter.name}_${this.selectedCollective.name}.pdf`
+      );
+      this.isLoading = false;
+    });
   }
 }
