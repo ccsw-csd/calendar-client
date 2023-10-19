@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
   appCode: 'calendarManager',
-  server: '../teammanager-data',
+  server: '../calendarManager-data',
   sso: '../sso' 
 };
